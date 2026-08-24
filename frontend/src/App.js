@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import HomePage from './pages/HomePage';
 import RegisterPage from './pages/RegisterPage';
 import PaymentPage from './pages/PaymentPage';
+import TrackStatusPage from './pages/TrackStatusPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ThemeDetailPage from './pages/themes/ThemeDetailPage';
@@ -39,6 +40,9 @@ export default function App() {
               <Route path="/"                        element={<HomePage />} />
               <Route path="/register"                element={<RegisterPage />} />
               <Route path="/payment/:registrationId" element={<PaymentPage />} />
+              <Route path="/track"                   element={<TrackStatusPage />} />
+              <Route path="/status"                  element={<TrackStatusPage />} />
+              <Route path="/track-status"            element={<TrackStatusPage />} />
               <Route path="/themes/:slug"            element={<ThemeDetailPage />} />
               <Route path="/admin/login"             element={<AdminLoginPage />} />
               <Route path="/admin/dashboard"         element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />

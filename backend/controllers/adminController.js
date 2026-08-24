@@ -202,6 +202,112 @@ exports.getRegistrationById = async (req, res) => {
 };
 
 /**
+ * Export Registrations as CSV (Excel compatible)
+ */
+exports.exportExcel = async (req, res) => {
+  try {
+    const { status, search = '' } = req.query;
+    const where = {};
+    if (status) where.status = status;
+
+    if (search && search.trim()) {
+      where[Op.or] = [
+        { firstName:      { [Op.like]: `%${search}%` } },
+        { lastName:       { [Op.like]: `%${search}%` } },
+        { email:          { [Op.like]: `%${search}%` } },
+        { paperTitle:     { [Op.like]: `%${search}%` } },
+        { registrationId: { [Op.like]: `%${search}%` } },
+        { collegeName:    { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    const regs = await Registration.findAll({
+      where,
+      order: [['createdAt', 'DESC']],
+    });
+
+    // CSV Header row
+    const headers = [
+      'Registration ID',
+      'Salutation',
+      'First Name',
+      'Last Name',
+      'Full Name',
+      'Designation',
+      'Department',
+      'College Name',
+      'College Address',
+      'District',
+      'Phone',
+      'Email',
+      'Category',
+      'Co-Authors',
+      'Paper Title',
+      'Sub-Theme',
+      'Keywords',
+      'Status',
+      'Payment Method',
+      'Transaction ID',
+      'Payment Amount (INR)',
+      'Payment Paid At',
+      'Admin Remarks',
+      'Registered At'
+    ];
+
+    const escapeCsv = (str) => {
+      if (str === null || str === undefined) return '""';
+      const s = String(str).replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const rows = regs.map(r => {
+      let coAuthorsStr = '';
+      if (r.coAuthors && Array.isArray(r.coAuthors)) {
+        coAuthorsStr = r.coAuthors.map(c => `${c.salutation || ''} ${c.firstName || ''} ${c.lastName || ''} (${c.collegeName || ''})`).join('; ');
+      }
+
+      return [
+        escapeCsv(r.registrationId),
+        escapeCsv(r.salutation),
+        escapeCsv(r.firstName),
+        escapeCsv(r.lastName),
+        escapeCsv(`${r.salutation} ${r.firstName} ${r.lastName}`.trim()),
+        escapeCsv(r.designation),
+        escapeCsv(r.department),
+        escapeCsv(r.collegeName),
+        escapeCsv(r.collegeAddress),
+        escapeCsv(r.district),
+        escapeCsv(r.phone),
+        escapeCsv(r.email),
+        escapeCsv(r.category),
+        escapeCsv(coAuthorsStr),
+        escapeCsv(r.paperTitle),
+        escapeCsv(r.subTheme),
+        escapeCsv(r.keywords),
+        escapeCsv(r.status),
+        escapeCsv(r.paymentMethod || ''),
+        escapeCsv(r.paymentTransactionId || ''),
+        escapeCsv(r.paymentAmount || '0'),
+        escapeCsv(r.paymentPaidAt ? new Date(r.paymentPaidAt).toLocaleString('en-IN') : ''),
+        escapeCsv(r.adminRemarks || ''),
+        escapeCsv(r.createdAt ? new Date(r.createdAt).toLocaleString('en-IN') : ''),
+      ].join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+    const filename = `INCOCOM2K26_${status || 'All'}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return res.status(200).send(csvContent);
+
+  } catch (e) {
+    console.error("Export Excel Error:", e);
+    return res.status(500).json({ success: false, message: e.message });
+  }
+};
+
+/**
  * Update Status
  */
 exports.updateStatus = async (req, res) => {

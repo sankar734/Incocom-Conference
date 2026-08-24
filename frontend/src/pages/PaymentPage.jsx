@@ -75,7 +75,24 @@ export default function PaymentPage() {
       if (ss) fd.append('screenshotFile', ss);
       const r = await submitPayment(fd);
       toast.success('Payment submitted! Receipt sent to your email 📧');
-      setReceipt(r.data.receipt);
+      const receivedReceipt = r.data.receipt || {
+        registrationId:      r.data.data?.registrationId || registrationId,
+        authorName:          aName(reg || {}),
+        email:               reg?.email,
+        phone:               reg?.phone,
+        paperTitle:          reg?.paperTitle,
+        subTheme:            reg?.subTheme,
+        collegeName:         reg?.collegeName,
+        category:            reg?.category,
+        transactionId:       txnId.trim().toUpperCase(),
+        method:              method || 'GPay / UPI',
+        amount:              fee.amount,
+        screenshotUploaded:  !!ss,
+        paidAt:              new Date(),
+        conferenceDate:      '21.04.2026 (Tuesday)',
+        venue:               'Dr. APJ. Abdul Kalam Hall, NPR College of Engineering and Technology, Natham, Dindigul – 624 401',
+      };
+      setReceipt(receivedReceipt);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
       toast.error(e.response?.data?.message || 'Submission failed. Try again.');
