@@ -36,27 +36,39 @@ function getInitials(fullName) {
   const tokens = nameWithoutTitle.split(/\s+/).filter(Boolean);
   if (tokens.length === 0) return 'NC';
   
-  if (tokens.length === 1) {
-    return tokens[0].replace(/[^A-Za-z]/g, '').substring(0, 2).toUpperCase();
+  const initialsList = [];
+  let mainNameChar = '';
+  
+  for (const token of tokens) {
+    const cleanToken = token.replace(/[^A-Za-z]/g, '');
+    if (!cleanToken) continue;
+    
+    // Check if token is an initial (e.g. "B.", "N.", "S.", or single letter)
+    if (token.endsWith('.') || (token.length <= 2 && cleanToken.length === 1)) {
+      initialsList.push(cleanToken.toUpperCase());
+    } else if (!mainNameChar) {
+      // First letter of the primary name (e.g. "Bobinath" -> 'B', "Arjun" -> 'A', "Selvaperumal" -> 'S')
+      mainNameChar = cleanToken[0].toUpperCase();
+    }
   }
   
-  // First initial (e.g., 'S.' -> 'S')
-  const firstChar = tokens[0].replace(/[^A-Za-z]/g, '')[0] || '';
+  // If initials found: combine all initials + main name first letter (e.g. B. N. Bobinath -> BNB)
+  if (initialsList.length > 0) {
+    return initialsList.join('') + mainNameChar;
+  }
   
-  // First letter of the primary name
-  const mainNameToken = tokens.find(t => !t.endsWith('.') && t.length > 1) || tokens[tokens.length - 1];
-  const secondChar = mainNameToken.replace(/[^A-Za-z]/g, '')[0] || '';
-  
-  return (firstChar + secondChar).toUpperCase() || nameWithoutTitle.substring(0, 2).toUpperCase();
+  // Fallback if no dot initials
+  return tokens.map(t => t.replace(/[^A-Za-z]/g, '')[0]).filter(Boolean).slice(0, 3).join('').toUpperCase();
 }
 
 function PersonCard({ person, index }) {
   const initials = getInitials(person.name);
   const color = avatarColors[index % avatarColors.length];
+  const isLong = initials.length >= 3;
   
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 flex items-start gap-3.5 sm:gap-4">
-      <div className={`flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center text-white font-mono font-bold text-xs sm:text-sm tracking-wider shadow-sm`}>
+      <div className={`flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br ${color} rounded-xl flex items-center justify-center text-white font-mono font-bold ${isLong ? 'text-[11px] sm:text-xs tracking-tight' : 'text-xs sm:text-sm tracking-wider'} shadow-sm`}>
         {initials}
       </div>
       <div className="min-w-0 flex-1">
